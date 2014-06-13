@@ -5,6 +5,21 @@
 
 <canvas id=can></canvas>
 <input type=color id=inputColor value='#663399'>
+<br>
+<input type=range id=inputTolerance min=-255 max=255 title='Color variation tolerance'>
+<input type=range id=inputRange min=0 max=255 title='Range around main color used'>
+<input type=range id=inputRangeSpread min=1 max=900 title='Main color change frequency'>
+<br>
+<input type=range id=inputRangeRed   min=0 max=255 title='Range of red used'>
+<input type=range id=inputRangeGreen min=0 max=255 title='Range of green used'>
+<input type=range id=inputRangeBlue  min=0 max=255 title='Range of blue used'>
+<br>
+<input type=range id=inputSpreadRed   min=1 max=500 title='Red change
+frequency'>
+<input type=range id=inputSpreadGreen min=1 max=500 title='Green change
+frequency'>
+<input type=range id=inputSpreadBlue  min=1 max=500 title='Blue change
+frequency'>
 
 <script type=text/worker id=workerCode>
 /*
@@ -729,6 +744,9 @@ function colorTexture(imbuf, width, height, options) {
   var colorRange = options.colorRange || [90, 50, 20];
   var tolerance = options.tolerance || -44;
   var colorSpread = options.colorSpread || [400, 200, 100];
+  var rangeSpread = options.rangeSpread || 900;
+  var range = options.range || 128;
+  var rangemax = 255 - range;
 
   var finalColor = [0, 0, 0];
   var hm = [0, 0, 0];
@@ -739,9 +757,6 @@ function colorTexture(imbuf, width, height, options) {
   //var func = bezier(1, 0, 0, 1);
   //var func = linearInterpolation([[0,0.3], [0.5,0.7], [0.9,0.9]]);
 
-  var range = 128;
-  var rangemax = 255 - range;
-  var rangespread = 900;
   // We must respect the order in which the colors are chosen.
   var colorFromOrder = [0, 1, 2].sort(function(a,b) { return color[a] - color[b]; });
   var orderFromColor = [0,0,0];
@@ -759,7 +774,7 @@ function colorTexture(imbuf, width, height, options) {
     for (var c = 0; c < 3; c++) {
       var rangeFrom = color[c] - range / 2;
       var rangeTo = color[c] + range / 2;
-      var rangeAvg = toRange(simplexes[c].noise2D(x/rangespread, y/rangespread),
+      var rangeAvg = toRange(simplexes[c].noise2D(x/rangeSpread, y/rangeSpread),
           rangeFrom, rangeTo);
       finalColor[c] = toRange(hm[c],
           rangeAvg - colorRange[c] / 2, rangeAvg + colorRange[c] / 2);
@@ -837,6 +852,66 @@ function colorFromHex(hex) {
 
 inputColor.addEventListener('change', function(event) {
   messageContainer.color = colorFromHex(event.target.value);
+  render();
+});
+inputTolerance.addEventListener('change', function(event) {
+  messageContainer.tolerance = +(event.target.value);
+  render();
+});
+inputRange.addEventListener('change', function(event) {
+  messageContainer.range = +(event.target.value);
+  render();
+});
+inputRangeSpread.addEventListener('change', function(event) {
+  messageContainer.rangeSpread = +(event.target.value);
+  render();
+});
+inputRangeRed.addEventListener('change', function(event) {
+  messageContainer.colorRange = [
+    +(event.target.value),
+    messageContainer.colorRange[1],
+    messageContainer.colorRange[2],
+  ];
+  render();
+});
+inputRangeGreen.addEventListener('change', function(event) {
+  messageContainer.colorRange = [
+    messageContainer.colorRange[0],
+    +(event.target.value),
+    messageContainer.colorRange[2],
+  ];
+  render();
+});
+inputRangeBlue.addEventListener('change', function(event) {
+  messageContainer.colorRange = [
+    messageContainer.colorRange[0],
+    messageContainer.colorRange[1],
+    +(event.target.value),
+  ];
+  render();
+});
+inputSpreadRed.addEventListener('change', function(event) {
+  messageContainer.colorSpread = [
+    +(event.target.value),
+    messageContainer.colorSpread[1],
+    messageContainer.colorSpread[2],
+  ];
+  render();
+});
+inputSpreadGreen.addEventListener('change', function(event) {
+  messageContainer.colorSpread = [
+    messageContainer.colorSpread[0],
+    +(event.target.value),
+    messageContainer.colorSpread[2],
+  ];
+  render();
+});
+inputSpreadBlue.addEventListener('change', function(event) {
+  messageContainer.colorSpread = [
+    messageContainer.colorSpread[0],
+    messageContainer.colorSpread[1],
+    +(event.target.value),
+  ];
   render();
 });
 
