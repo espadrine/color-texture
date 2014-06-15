@@ -741,12 +741,12 @@ function colorTexture(imbuf, width, height, options) {
   options = options || {};
   var readjuster = options.readjuster || identity;
   var color = options.color || [150, 200, 60];
-  var colorRange = options.colorRange || [90, 50, 20];
   var tolerance = options.tolerance || -44;
-  var colorSpread = options.colorSpread || [400, 200, 100];
   var rangeSpread = options.rangeSpread || 900;
   var range = options.range || 128;
   var rangemax = 255 - range;
+  var colorRange = options.colorRange || [90, 50, 20];
+  var colorSpread = options.colorSpread || [400, 200, 100];
 
   var finalColor = [0, 0, 0];
   var hm = [0, 0, 0];
@@ -823,14 +823,32 @@ var image = ctx.getImageData(0, 0, width, height);
 var messageContainer = {
   image: image,
   color: [102, 51, 153],
-  colorRange: [100, 90, 30],
   tolerance: 0,
+  range: 128,
+  rangeSpread: 900,
+  colorRange: [100, 90, 30],
   colorSpread: [400, 200, 100],
 };
 function render() {
   worker.postMessage(messageContainer);
+  var hash = hashFromParameters(messageContainer);
+  window.history.replaceState(hash, document.title,
+    '#' + hash);
 }
-render();
+
+addEventListener('load', function() {
+  var hash = document.location.hash.slice(1);
+  if (hash.split(':').length >= 12) {
+    var parameters = parametersFromHash(hash);
+    messageContainer.color = parameters.color;
+    messageContainer.tolerance = parameters.tolerance;
+    messageContainer.range = parameters.range;
+    messageContainer.rangeSpread = parameters.rangeSpread;
+    messageContainer.colorRange = parameters.colorRange;
+    messageContainer.colorSpread = parameters.colorSpread;
+  }
+  render();
+});
 
 
 // UI
@@ -849,6 +867,30 @@ function colorFromHex(hex) {
     return [parseInt(part[1], 16), parseInt(part[2], 16), parseInt(part[3], 16)];
   } catch(e) { return null; }
 }
+
+function hashFromParameters(parameters) {
+  return parameters.color.join(':') + ":"
+    + parameters.tolerance + ':'
+    + parameters.range + ':'
+    + parameters.rangeSpread + ':'
+    + parameters.colorRange.join(':') + ':'
+    + parameters.colorSpread.join(':');
+}
+
+function parametersFromHash(hash) {
+  var elements = hash.split(':');
+  return {
+    color: [+elements[0], +elements[1], +elements[2]],
+    tolerance: +elements[3],
+    range: +elements[4],
+    rangeSpread: +elements[5],
+    colorRange: [+elements[6], +elements[7], +elements[8]],
+    colorSpread: [+elements[9], +elements[10], +elements[11]]
+  };
+}
+
+
+// Event hooks.
 
 inputColor.addEventListener('change', function(event) {
   messageContainer.color = colorFromHex(event.target.value);
